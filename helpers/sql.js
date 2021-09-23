@@ -1,7 +1,7 @@
 const { BadRequestError } = require("../expressError");
 
-// THIS NEEDS SOME GREAT DOCUMENTATION.
-
+// This function maps the JavaScript variables to corresponding columns in SQL tables then generates the
+// SQL script for "Set" clause in "Update" statement to update partial columns with the values
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const keys = Object.keys(dataToUpdate);
   if (keys.length === 0) throw new BadRequestError("No data");

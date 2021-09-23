@@ -52,7 +52,25 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 
 router.get("/", async function (req, res, next) {
   try {
-    const companies = await Company.findAll();
+    let { name, minEmployees, maxEmployees } = req.query;
+    // if minEmployees and maxEmployees both present then the minEmployees cannot be greater than or equal to maxEmployees
+    if (minEmployees && maxEmployees && minEmployees >= maxEmployees){
+      throw new BadRequestError("max have to be greater than min");
+    }
+    // minEmployees set to 0 if not present
+    if (!minEmployees){
+      minEmployees = 0;
+    }
+    // maxEmployees set to a large integer if not present
+    if (!maxEmployees){
+      maxEmployees = 100000000;
+    }
+    // name set to "%%" if not present
+    if (!name){
+      name = "%%";
+    }
+    let filters = {name, minEmployees, maxEmployees};
+    const companies = await Company.findAll(filters);
     return res.json({ companies });
   } catch (err) {
     return next(err);
