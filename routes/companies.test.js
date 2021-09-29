@@ -1,7 +1,7 @@
 "use strict";
 
 const request = require("supertest");
-
+const {createToken} = require("../helpers/tokens");
 const db = require("../db");
 const app = require("../app");
 
@@ -28,12 +28,13 @@ describe("POST /companies", function () {
     description: "DescNew",
     numEmployees: 10,
   };
+  const token = createToken({username: 'u1', isAdmin:true})
 
   test("ok for users", async function () {
     const resp = await request(app)
         .post("/companies")
         .send(newCompany)
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
       company: newCompany,
@@ -47,7 +48,7 @@ describe("POST /companies", function () {
           handle: "new",
           numEmployees: 10,
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -58,14 +59,24 @@ describe("POST /companies", function () {
           ...newCompany,
           logoUrl: "not-a-url",
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(400);
   });
+  
+  test("bad request with not an admin", async function(){
+    const resp = await request(app)
+      .post("/companies")
+      .send(newCompany)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  })
 });
 
 /************************************** GET /companies */
 
 describe("GET /companies", function () {
+  const token = createToken({username: 'u1', isAdmin:true})
+
   test("ok for anon", async function () {
     const resp = await request(app).get("/companies");
     expect(resp.body).toEqual({
@@ -122,7 +133,7 @@ describe("GET /companies", function () {
     await db.query("DROP TABLE companies CASCADE");
     const resp = await request(app)
         .get("/companies")
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(500);
   });
 });
@@ -130,6 +141,8 @@ describe("GET /companies", function () {
 /************************************** GET /companies/:handle */
 
 describe("GET /companies/:handle", function () {
+  const token = createToken({username: 'u1', isAdmin:true})
+
   test("works for anon", async function () {
     const resp = await request(app).get(`/companies/c1`);
     expect(resp.body).toEqual({
@@ -165,13 +178,15 @@ describe("GET /companies/:handle", function () {
 /************************************** PATCH /companies/:handle */
 
 describe("PATCH /companies/:handle", function () {
+  const token = createToken({username: 'u1', isAdmin:true})
+
   test("works for users", async function () {
     const resp = await request(app)
         .patch(`/companies/c1`)
         .send({
           name: "C1-new",
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.body).toEqual({
       company: {
         handle: "c1",
@@ -198,7 +213,7 @@ describe("PATCH /companies/:handle", function () {
         .send({
           name: "new nope",
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(404);
   });
 
@@ -208,7 +223,7 @@ describe("PATCH /companies/:handle", function () {
         .send({
           handle: "c1-new",
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -218,18 +233,30 @@ describe("PATCH /companies/:handle", function () {
         .send({
           logoUrl: "not-a-url",
         })
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(400);
   });
+
+  test("bad request on not an admin", async function(){
+    const resp = await request(app)
+        .patch(`/companies/c1`)
+        .send({
+          name: "C1-new",
+        })
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);        
+  })
 });
 
 /************************************** DELETE /companies/:handle */
 
 describe("DELETE /companies/:handle", function () {
+  const token = createToken({username: 'u1', isAdmin:true})
+
   test("works for users", async function () {
     const resp = await request(app)
         .delete(`/companies/c1`)
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.body).toEqual({ deleted: "c1" });
   });
 
@@ -242,7 +269,7 @@ describe("DELETE /companies/:handle", function () {
   test("not found for no such company", async function () {
     const resp = await request(app)
         .delete(`/companies/nope`)
-        .set("authorization", `Bearer ${u1Token}`);
+        .set("authorization", `Bearer ${token}`);
     expect(resp.statusCode).toEqual(404);
   });
 });
