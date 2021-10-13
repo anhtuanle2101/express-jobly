@@ -53,7 +53,14 @@ class Job {
      * 
      * No login or admin role required
      */
-    static async findAll(){
+    static async findAll(filters){
+        let { minSalary, maxSalary, titleLike, hasEquity } = filters;
+        minSalary = minSalary || 0;
+        maxSalary = maxSalary || 10000000;
+        if (maxSalary < minSalary){
+            throw new BadRequestError("max has to be greater than min");
+        }
+        titleLike = titleLike?`%${titleLike}%`:"%%";
         const result = await db.query(
             `SELECT id,
                     title,
@@ -61,7 +68,12 @@ class Job {
                     equity,
                     company_handle as "companyHandle"
             FROM jobs
-            ORDER BY title`
+            WHERE salary >= $1
+            AND salary <= $2
+            AND title ILIKE $3
+            AND equity ${hasEquity?">":"="} 0
+            ORDER BY title`,
+            [minSalary, maxSalary, titleLike, hasEquity]
         )
         const jobs = result.rows;
 

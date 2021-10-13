@@ -48,7 +48,8 @@ router.post("/", ensureLoggedIn, ensureAdmin, async (req, res, next)=>{
  */
 router.get("/", async (req, res, next)=>{
     try {
-        const jobs = await Job.findAll();
+        let filters = req.query;
+        const jobs = await Job.findAll( filters );
         return res.json({ jobs });
     } catch (err) {
         return next(err);
