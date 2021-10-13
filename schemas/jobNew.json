@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "title": "Developer",
+            "salary": 60000,
+            "equity": 0.5,
+            "companyHandle": "CS"
+        }
+    ],
+    "required": [
+        "title",
+        "salary",
+        "equity",
+        "companyHandle"
+    ],
+    "properties": {
+        "title": {
+            "$id": "#/properties/title",
+            "type": "string",
+            "title": "The title schema",
+            "description": "Job title.",
+            "default": "",
+            "examples": [
+                "Developer"
+            ]
+        },
+        "salary": {
+            "$id": "#/properties/salary",
+            "type": "integer",
+            "title": "The salary schema",
+            "description": "Salary.",
+            "default": 0,
+            "examples": [
+                60000
+            ]
+        },
+        "equity": {
+            "$id": "#/properties/equity",
+            "type": "number",
+            "title": "The equity schema",
+            "description": "Equity.",
+            "default": 0.0,
+            "examples": [
+                0.5
+            ]
+        },
+        "companyHandle": {
+            "$id": "#/properties/companyHandle",
+            "type": "string",
+            "title": "The companyHandle schema",
+            "description": "Ref to company handle",
+            "default": "",
+            "examples": [
+                "CS"
+            ]
+        }
+    },
+    "additionalProperties": true
+}
