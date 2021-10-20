@@ -1,6 +1,6 @@
 "use strict";
 
-const jsonschema = require("jsonshema");
+const jsonschema = require("jsonschema");
 const express = require("express");
 
 const { BadRequestError } = require("../expressError");
@@ -48,8 +48,11 @@ router.post("/", ensureLoggedIn, ensureAdmin, async (req, res, next)=>{
  */
 router.get("/", async (req, res, next)=>{
     try {
-        let filters = req.query;
+        let { titleLike, minSalary, maxSalary, hasEquity } = req.query;
+
+        let filters = {titleLike, minSalary, maxSalary, hasEquity};
         const jobs = await Job.findAll( filters );
+        
         return res.json({ jobs });
     } catch (err) {
         return next(err);

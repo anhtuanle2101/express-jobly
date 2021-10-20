@@ -1,7 +1,7 @@
 "use strict";
 
 const db = require("../db");
-const { BadRequestError, NotFoundError } = require("../expressError");
+const { BadRequestError, NotFoundError, ExpressError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
 
 // Related functions for jobs.
@@ -54,13 +54,22 @@ class Job {
      * No login or admin role required
      */
     static async findAll(filters){
-        let { minSalary, maxSalary, titleLike, hasEquity } = filters;
-        minSalary = minSalary || 0;
-        maxSalary = maxSalary || 10000000;
-        if (maxSalary < minSalary){
-            throw new BadRequestError("max has to be greater than min");
-        }
-        titleLike = titleLike?`%${titleLike}%`:"%%";
+        let titleLike, minSalary, maxSalary, hasEquity;
+        if (filters === undefined){
+            titleLike = "%%";
+            minSalary = 0;
+            maxSalary = 100000000;
+            hasEquity = undefined;
+        }else{
+            titleLike = (filters.titleLike !== undefined)?`%${filters.titleLike}%`:"%%";
+            minSalary = filters.minSalary || 0;
+            maxSalary = filters.maxSalary || 100000000;
+            hasEquity = (filters.hasEquity===undefined)?undefined:filters.hasEquity;
+            if (filters.maxSalary < filters.minSalary){
+                throw new BadRequestError("max has to be greater than min");
+            }
+        }  
+        
         const result = await db.query(
             `SELECT id,
                     title,
@@ -71,12 +80,22 @@ class Job {
             WHERE salary >= $1
             AND salary <= $2
             AND title ILIKE $3
-            AND equity ${hasEquity?">":"="} 0
+            ${(hasEquity === undefined)?"":`AND equity ${hasEquity?'>':'='} 0`}
             ORDER BY title`,
-            [minSalary, maxSalary, titleLike, hasEquity]
+            [minSalary, maxSalary, titleLike]
         )
+        // console.log(`SELECT id,
+        //         title,
+        //         salary,
+        //         equity,
+        //         company_handle as "companyHandle"
+        // FROM jobs
+        // WHERE salary >= ${minSalary}
+        // AND salary <= ${maxSalary}
+        // AND title ILIKE ${titleLike}
+        // AND equity ${hasEquity?">":"="} 0
+        // ORDER BY title`);
         const jobs = result.rows;
-
         return jobs;
     }
 
@@ -97,7 +116,8 @@ class Job {
                     name,
                     description,
                     num_employees AS "numEmployees",
-                    logo_url AS "logoUrl"
+                    logo_url AS "logoUrl",
+                    company_handle AS "companyHandle"
             FROM jobs j JOIN companies c ON j.company_handle = c.handle
             WHERE id = $1`,
             [id]);
@@ -109,13 +129,14 @@ class Job {
             title: result.rows[0].title,
             salary: result.rows[0].salary,
             equity: result.rows[0].equity,
-            company:{
-                handle: result.rows[0].handle,
-                name: result.rows[0].name,
-                description: result.rows[0].description,
-                numEmployees: result.rows[0].numEmployees,
-                logoUrl: result.rows[0].logoUrl
-            }
+            companyHandle: result.rows[0].companyHandle
+            // company:{
+            //     handle: result.rows[0].handle,
+            //     name: result.rows[0].name,
+            //     description: result.rows[0].description,
+            //     numEmployees: result.rows[0].numEmployees,
+            //     logoUrl: result.rows[0].logoUrl
+            // }
         }
 
         return job;
@@ -133,6 +154,9 @@ class Job {
      * Throws NotFoundError if not found.
      */
     static async update(id, data){
+        if (data.id || data.companyHandle){
+            throw new BadRequestError("id cannot be changed nor the company associated with this job");
+        }
         const { setCols, values } = sqlForPartialUpdate(
             data,
             {
@@ -149,7 +173,7 @@ class Job {
                     salary,
                     equity,
                     company_handle AS "companyHandle"`,
-            [...values, idIdx]
+            [...values, id]
         );
 
         const job = result.rows[0];

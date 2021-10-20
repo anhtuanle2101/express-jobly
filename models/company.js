@@ -50,11 +50,18 @@ class Company {
    * */
 
   static async findAll(filters) {
-    let name = (filters.name !== undefined)?`%${filters.name}%`:"%%";
-    let minEmployees = filters.minEmployees || 0;
-    let maxEmployees = filters.maxEmployees || 100000000;
+    let name, minEmployees, maxEmployees;
+    if (filters === undefined) {
+      name = "%%";
+      minEmployees = 0;
+      maxEmployees = 1000000000;
+    }else{
+      name = (filters.name !== undefined)?`%${filters.name}%`:"%%";
+      minEmployees = filters.minEmployees || 0;
+      maxEmployees = filters.maxEmployees || 1000000000;
+    }
+    
   
-    console.log(name, minEmployees, maxEmployees);
     const companiesRes = await db.query(
           `SELECT handle,
                   name,
