@@ -50,8 +50,11 @@ class Company {
    * */
 
   static async findAll(filters) {
-    let {name, minEmployees, maxEmployees} = filters;
-    name = (name === "%%")?`%${name}%`:name;
+    let name = (filters.name !== undefined)?`%${filters.name}%`:"%%";
+    let minEmployees = filters.minEmployees || 0;
+    let maxEmployees = filters.maxEmployees || 100000000;
+  
+    console.log(name, minEmployees, maxEmployees);
     const companiesRes = await db.query(
           `SELECT handle,
                   name,
