@@ -106,6 +106,8 @@ router.patch("/:username", ensureLoggedIn, async function (req, res, next) {
 
 /** DELETE /[username]  =>  { deleted: username }
  *
+ * returns { deleted: username }
+ * 
  * Authorization required: login
  **/
 
@@ -118,5 +120,25 @@ router.delete("/:username", ensureLoggedIn, async function (req, res, next) {
   }
 });
 
+/** POST /[username]/jobs/[jobId] => { applied: jobId } 
+ * 
+ * returns { applied: jobId }
+ * 
+ * Authorization required: login as owner or admin
+*/
+router.post("/:username/jobs/:jobId", ensureLoggedIn, async (req, res, next)=>{
+  try {
+    const {username, jobId} = req.params;
+    if (username !== res.locals.user.username && !res.locals.user.isAdmin){
+      throw new UnauthorizedError("user must be the owner or admin")
+    }
+    await User.apply(username, jobId);
+    return {
+      applied: jobId
+    }
+  } catch (err){
+    return next(err);
+  }
+})
 
 module.exports = router;
